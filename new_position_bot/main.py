@@ -34,6 +34,26 @@ def get_kalshi_base_url(live: bool = False) -> str:
     return get_env_var("KALSHI_BASE_URL", DEMO_KALSHI_BASE_URL)
 
 
+def get_affordable_order_count(
+    requested_count: int,
+    order_price: int | None,
+    available_funds: int,
+    spending_limit_remaining: int,
+) -> int:
+    if (
+        not isinstance(order_price, int)
+        or isinstance(order_price, bool)
+        or order_price <= 0
+    ):
+        return 0
+
+    return min(
+        requested_count,
+        available_funds // order_price,
+        spending_limit_remaining // order_price,
+    )
+
+
 def _derive_series_ticker(event_ticker: str) -> str:
     """Best-effort extraction of series ticker from an event ticker.
 
@@ -254,11 +274,12 @@ def run_bot_logic(live: bool = False):
 
                 # Calculate order cost
                 order_price = market.get(f"{side}_ask")
-                affordable_count = min(
-                    available_funds // order_price,
-                    spending_limit_remaining // order_price,
+                order_count = get_affordable_order_count(
+                    requested_count=requested_count,
+                    order_price=order_price,
+                    available_funds=available_funds,
+                    spending_limit_remaining=spending_limit_remaining,
                 )
-                order_count = min(requested_count, affordable_count)
 
                 if order_count <= 0:
                     logger.warning(

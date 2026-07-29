@@ -1,6 +1,6 @@
 from unittest.mock import ANY, MagicMock, patch
 
-from main import get_kalshi_base_url, parse_args
+from main import get_affordable_order_count, get_kalshi_base_url, parse_args
 
 
 def test_live_flag_selects_production_mode():
@@ -13,6 +13,18 @@ def test_live_mode_selects_production_api(monkeypatch):
 
     assert get_kalshi_base_url(live=False) == "https://demo-api.kalshi.co"
     assert get_kalshi_base_url(live=True) == "https://api.elections.kalshi.com"
+
+
+def test_zero_price_has_no_affordable_contracts():
+    assert (
+        get_affordable_order_count(
+            requested_count=10,
+            order_price=0,
+            available_funds=1000,
+            spending_limit_remaining=1000,
+        )
+        == 0
+    )
 
 
 def test_bot_uses_grok_contract_count_and_available_funds(monkeypatch):
